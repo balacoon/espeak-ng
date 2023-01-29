@@ -97,7 +97,20 @@ typedef enum {
   espeakEVENT_SAMPLERATE = 8       // internal use, set sample rate
 } espeak_EVENT_TYPE;
 
-
+typedef struct {
+    const char* phontab;
+    size_t phontab_size;
+    const char* phonindex;
+    size_t phonindex_size;
+    const char* phondata;
+    size_t phondata_size;
+    const char* intonations;
+    size_t intonations_size;
+    const char** lang_conf_lines;
+    int lang_conf_lines_num;
+    const char *dict;
+    size_t dict_size;
+} espeak_LOADED_DATA;
 
 typedef struct {
 	espeak_EVENT_TYPE type;
@@ -211,6 +224,11 @@ ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output, int buflength, cons
 
    Returns: sample rate in Hz, or -1 (EE_INTERNAL_ERROR).
 */
+
+#ifdef __cplusplus
+extern "C"
+#endif
+ESPEAK_API int espeak_InitializeMem(espeak_AUDIO_OUTPUT output, int buflength, const espeak_LOADED_DATA *data, int options);
 
 typedef int (t_espeak_callback)(short*, int, espeak_EVENT*);
 
@@ -618,6 +636,11 @@ ESPEAK_API espeak_ERROR espeak_SetVoiceByFile(const char *filename);
              you may try after a while to call the function again.
 	   EE_INTERNAL_ERROR.
 */
+
+#ifdef __cplusplus
+extern "C"
+#endif
+ESPEAK_API espeak_ERROR espeak_SetVoiceByBinaryData(const char* filename, const espeak_LOADED_DATA *data);
 
 #ifdef __cplusplus
 extern "C"

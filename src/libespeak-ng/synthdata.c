@@ -99,23 +99,13 @@ static espeak_ng_STATUS ReadPhFile(void **ptr, const char *fname, int *size, esp
 	return ENS_OK;
 }
 
-espeak_ng_STATUS LoadPhData(int *srate, espeak_ng_ERROR_CONTEXT *context)
+static espeak_ng_STATUS LoadPhDataRest(int length, int *srate, espeak_ng_ERROR_CONTEXT *context)
 {
 	int ix;
 	int version;
-	int length = 0;
 	int rate;
 	unsigned char *p;
 
-	espeak_ng_STATUS status;
-	if ((status = ReadPhFile((void **)&phoneme_tab_data, "phontab", NULL, context)) != ENS_OK)
-		return status;
-	if ((status = ReadPhFile((void **)&phoneme_index, "phonindex", NULL, context)) != ENS_OK)
-		return status;
-	if ((status = ReadPhFile((void **)&phondata_ptr, "phondata", NULL, context)) != ENS_OK)
-		return status;
-	if ((status = ReadPhFile((void **)&tunes, "intonations", &length, context)) != ENS_OK)
-		return status;
 	wavefile_data = (unsigned char *)phondata_ptr;
 	n_tunes = length / sizeof(TUNE);
 
@@ -153,6 +143,49 @@ espeak_ng_STATUS LoadPhData(int *srate, espeak_ng_ERROR_CONTEXT *context)
 		*srate = rate;
 	return ENS_OK;
 }
+
+espeak_ng_STATUS LoadPhData(int *srate, espeak_ng_ERROR_CONTEXT *context)
+{
+	int length = 0;
+	espeak_ng_STATUS status;
+	if ((status = ReadPhFile((void **)&phoneme_tab_data, "phontab", NULL, context)) != ENS_OK)
+		return status;
+	if ((status = ReadPhFile((void **)&phoneme_index, "phonindex", NULL, context)) != ENS_OK)
+		return status;
+	if ((status = ReadPhFile((void **)&phondata_ptr, "phondata", NULL, context)) != ENS_OK)
+		return status;
+	if ((status = ReadPhFile((void **)&tunes, "intonations", &length, context)) != ENS_OK)
+		return status;
+	return LoadPhDataRest(length, srate, context); 
+}
+
+espeak_ng_STATUS LoadPhDataMem(const espeak_LOADED_DATA *data, int *srate,
+		espeak_ng_ERROR_CONTEXT *context)
+{
+	// allocate data buffers and copy staff from memory
+	phoneme_tab_data = malloc(data->phontab_size);
+	if (phoneme_tab_data == NULL) {
+		return ENOMEM;
+	}
+	memcpy(phoneme_tab_data, data->phontab, data->phontab_size);
+	phoneme_index = malloc(data->phonindex_size);
+	if (phoneme_index == NULL) {
+		return ENOMEM;
+	}
+	memcpy(phoneme_index, data->phonindex, data->phonindex_size);
+	phondata_ptr = malloc(data->phondata_size);
+	if (phondata_ptr == NULL) {
+		return ENOMEM;
+	}
+	memcpy(phondata_ptr, data->phondata, data->phondata_size);
+	tunes = malloc(data->intonations_size);
+	if (tunes == NULL) {
+		return ENOMEM;
+	}
+	memcpy(tunes, data->intonations, data->intonations_size);
+	return LoadPhDataRest((int)data->intonations_size, srate, context);
+}
+
 
 void FreePhData(void)
 {

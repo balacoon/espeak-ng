@@ -109,6 +109,10 @@ ESPEAK_NG_API espeak_ng_STATUS
 espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *context);
 
 ESPEAK_NG_API espeak_ng_STATUS
+espeak_ng_InitializeMem(const espeak_LOADED_DATA *data,
+		        espeak_ng_ERROR_CONTEXT *context);
+
+ESPEAK_NG_API espeak_ng_STATUS
 espeak_ng_InitializeOutput(espeak_ng_OUTPUT_MODE output_mode,
                            int buffer_length,
                            const char *device);
@@ -132,6 +136,9 @@ espeak_ng_SetVoiceByName(const char *name);
 
 ESPEAK_NG_API espeak_ng_STATUS
 espeak_ng_SetVoiceByFile(const char *filename);
+
+ESPEAK_NG_API espeak_ng_STATUS
+espeak_ng_SetVoiceByBinaryData(const char* filename, const espeak_LOADED_DATA *data);
 
 ESPEAK_NG_API espeak_ng_STATUS
 espeak_ng_SetVoiceByProperties(espeak_VOICE *voice_selector);

@@ -48,18 +48,8 @@ static espeak_ERROR status_to_espeak_error(espeak_ng_STATUS status)
 
 #pragma GCC visibility push(default)
 
-ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output_type, int buf_length, const char *path, int options)
+static int espeak_InitializeOutput(espeak_AUDIO_OUTPUT output_type, int buf_length, int options)
 {
-	espeak_ng_InitializePath(path);
-	espeak_ng_ERROR_CONTEXT context = NULL;
-	espeak_ng_STATUS result = espeak_ng_Initialize(&context);
-	if (result != ENS_OK) {
-		espeak_ng_PrintStatusCodeMessage(result, stderr, context);
-		espeak_ng_ClearErrorContext(&context);
-		if ((options & espeakINITIALIZE_DONT_EXIT) == 0)
-			exit(1);
-	}
-
 	switch (output_type)
 	{
 	case AUDIO_OUTPUT_PLAYBACK:
@@ -79,6 +69,33 @@ ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output_type, int buf_length
 	option_phoneme_events = (options & (espeakINITIALIZE_PHONEME_EVENTS | espeakINITIALIZE_PHONEME_IPA));
 
 	return espeak_ng_GetSampleRate();
+}
+
+ESPEAK_API int espeak_Initialize(espeak_AUDIO_OUTPUT output_type, int buf_length, const char *path, int options)
+{
+	espeak_ng_InitializePath(path);
+	espeak_ng_ERROR_CONTEXT context = NULL;
+	espeak_ng_STATUS result = espeak_ng_Initialize(&context);
+	if (result != ENS_OK) {
+		espeak_ng_PrintStatusCodeMessage(result, stderr, context);
+		espeak_ng_ClearErrorContext(&context);
+		if ((options & espeakINITIALIZE_DONT_EXIT) == 0)
+			exit(1);
+	}
+        return espeak_InitializeOutput(output_type, buf_length, options);
+}
+
+ESPEAK_API int espeak_InitializeMem(espeak_AUDIO_OUTPUT output_type, int buf_length, const espeak_LOADED_DATA *data, int options)
+{
+	espeak_ng_ERROR_CONTEXT context = NULL;
+	espeak_ng_STATUS result = espeak_ng_InitializeMem(data, &context);
+	if (result != ENS_OK) {
+		espeak_ng_PrintStatusCodeMessage(result, stderr, context);
+		espeak_ng_ClearErrorContext(&context);
+		if ((options & espeakINITIALIZE_DONT_EXIT) == 0)
+			exit(1);
+	}
+        return espeak_InitializeOutput(output_type, buf_length, options);
 }
 
 ESPEAK_API espeak_ERROR espeak_Synth(const void *text, size_t size,
@@ -128,6 +145,11 @@ ESPEAK_API espeak_ERROR espeak_SetVoiceByName(const char *name)
 ESPEAK_API espeak_ERROR espeak_SetVoiceByFile(const char *filename)
 {
 	return status_to_espeak_error(espeak_ng_SetVoiceByFile(filename));
+}
+
+ESPEAK_API espeak_ERROR espeak_SetVoiceByBinaryData(const char* filename, const espeak_LOADED_DATA *data)
+{
+	return status_to_espeak_error(espeak_ng_SetVoiceByBinaryData(filename, data));
 }
 
 ESPEAK_API espeak_ERROR espeak_SetVoiceByProperties(espeak_VOICE *voice_selector)

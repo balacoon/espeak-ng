@@ -209,7 +209,6 @@ void LoadConfig(void) {
 	fclose(f);
 }
 
-
 static int LookupTune(const char *name) {
 	int ix;
 

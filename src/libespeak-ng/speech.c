@@ -357,28 +357,9 @@ const int param_defaults[N_SPEECH_PARAM] = {
 };
 
 
-ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *context)
+static espeak_ng_STATUS espeak_ng_InitializeVoice()
 {
 	int param;
-	int srate = 22050; // default sample rate 22050 Hz
-
-	// It seems that the wctype functions don't work until the locale has been set
-	// to something other than the default "C".  Then, not only Latin1 but also the
-	// other characters give the correct results with iswalpha() etc.
-	if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
-		if (setlocale(LC_CTYPE, "UTF-8") == NULL) {
-			if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL)
-				setlocale(LC_CTYPE, "");
-		}
-	}
-
-	espeak_ng_STATUS result = LoadPhData(&srate, context);
-	if (result != ENS_OK)
-		return result;
-
-	WavegenInit(srate, 0);
-	LoadConfig();
-
 	espeak_VOICE *current_voice_selected = espeak_GetCurrentVoice();
 	memset(current_voice_selected, 0, sizeof(espeak_VOICE));
 	SetVoiceStack(NULL, "");
@@ -404,6 +385,56 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *con
 
 	return ENS_OK;
 }
+
+ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Initialize(espeak_ng_ERROR_CONTEXT *context)
+{
+	int srate = 22050; // default sample rate 22050 Hz
+
+	// It seems that the wctype functions don't work until the locale has been set
+	// to something other than the default "C".  Then, not only Latin1 but also the
+	// other characters give the correct results with iswalpha() etc.
+	if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
+		if (setlocale(LC_CTYPE, "UTF-8") == NULL) {
+			if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL)
+				setlocale(LC_CTYPE, "");
+		}
+	}
+
+	espeak_ng_STATUS result = LoadPhData(&srate, context);
+	if (result != ENS_OK)
+		return result;
+
+	WavegenInit(srate, 0);
+	LoadConfig();
+
+	return espeak_ng_InitializeVoice();
+}
+
+ESPEAK_NG_API espeak_ng_STATUS espeak_ng_InitializeMem(const espeak_LOADED_DATA *data,
+		espeak_ng_ERROR_CONTEXT *context)
+{
+	int srate = 22050; // default sample rate 22050 Hz
+
+	// It seems that the wctype functions don't work until the locale has been set
+	// to something other than the default "C".  Then, not only Latin1 but also the
+	// other characters give the correct results with iswalpha() etc.
+	if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
+		if (setlocale(LC_CTYPE, "UTF-8") == NULL) {
+			if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL)
+				setlocale(LC_CTYPE, "");
+		}
+	}
+
+	espeak_ng_STATUS result = LoadPhDataMem(data, &srate, context);
+	if (result != ENS_OK)
+		return result;
+
+	WavegenInit(srate, 0);
+	// load config is not executed here, config does not exist by default
+
+	return espeak_ng_InitializeVoice();
+}
+
 
 ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetPhonemeEvents(int enable, int ipa) {
 	option_phoneme_events = 0;
@@ -866,6 +897,7 @@ ESPEAK_API const char *espeak_TextToPhonemes(const void **textptr, int textmode,
 
 	TranslateClause(translator, NULL, NULL);
 	*textptr = text_decoder_get_buffer(p_decoder);
+	fprintf(stderr, ">>>>>>terminator: %d\n", translator->clause_terminator);
 
 	return GetTranslatedPhonemeString(phonememode);
 }

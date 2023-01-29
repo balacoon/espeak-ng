@@ -193,12 +193,50 @@ static void InitGroups(Translator *tr)
 	}
 }
 
-int LoadDictionary(Translator *tr, const char *name, int no_error)
+static int LoadDictionaryRest(Translator *tr, const char *name, int size)
 {
 	int hash;
 	char *p;
 	int *pw;
 	int length;
+
+	pw = (int *)(tr->data_dictlist);
+	length = Reverse4Bytes(pw[1]);
+
+	if (size <= (N_HASH_DICT + sizeof(int)*2)) {
+		fprintf(stderr, "Empty _dict file: '%s\n", name);
+		return 2;
+	}
+
+	if ((Reverse4Bytes(pw[0]) != N_HASH_DICT) ||
+	    (length <= 0) || (length > 0x8000000)) {
+		fprintf(stderr, "Bad data: '%s' (%x length=%x)\n", name, Reverse4Bytes(pw[0]), length);
+		return 2;
+	}
+	tr->data_dictrules = &(tr->data_dictlist[length]);
+
+	// set up indices into data_dictrules
+	InitGroups(tr);
+
+	// set up hash table for data_dictlist
+	p = &(tr->data_dictlist[8]);
+
+	for (hash = 0; hash < N_HASH_DICT; hash++) {
+		tr->dict_hashtab[hash] = p;
+		while ((length = *(uint8_t *)p) != 0)
+			p += length;
+		p++; // skip over the zero which terminates the list for this hash value
+	}
+
+	if ((tr->dict_min_size > 0) && (size < (unsigned int)tr->dict_min_size))
+		fprintf(stderr, "Full dictionary is not installed for '%s'\n", name);
+
+	return 0;
+
+}
+
+int LoadDictionary(Translator *tr, const char *name, int no_error)
+{
 	FILE *f;
 	int size;
 	char fname[sizeof(path_home)+20];
@@ -234,39 +272,24 @@ int LoadDictionary(Translator *tr, const char *name, int no_error)
 	}
 	size = fread(tr->data_dictlist, 1, size, f);
 	fclose(f);
+        return LoadDictionaryRest(tr, name, size);
+}
 
-	pw = (int *)(tr->data_dictlist);
-	length = Reverse4Bytes(pw[1]);
-
-	if (size <= (N_HASH_DICT + sizeof(int)*2)) {
-		fprintf(stderr, "Empty _dict file: '%s\n", fname);
-		return 2;
+int LoadDictionaryMem(Translator *tr, const char* dict_data, size_t size)
+{
+	// TODO: dictionary_name and tr->dictionary_name are set to dummy value
+	// can be a problem if dictionary is reloaded
+	strncpy(dictionary_name, "mem", 40);
+	strncpy(tr->dictionary_name, "mem", 40);
+	if (tr->data_dictlist != NULL) {
+		free(tr->data_dictlist);
+		tr->data_dictlist = NULL;
 	}
-
-	if ((Reverse4Bytes(pw[0]) != N_HASH_DICT) ||
-	    (length <= 0) || (length > 0x8000000)) {
-		fprintf(stderr, "Bad data: '%s' (%x length=%x)\n", fname, Reverse4Bytes(pw[0]), length);
-		return 2;
+	if ((tr->data_dictlist = malloc(size)) == NULL) {
+		return 3;
 	}
-	tr->data_dictrules = &(tr->data_dictlist[length]);
-
-	// set up indices into data_dictrules
-	InitGroups(tr);
-
-	// set up hash table for data_dictlist
-	p = &(tr->data_dictlist[8]);
-
-	for (hash = 0; hash < N_HASH_DICT; hash++) {
-		tr->dict_hashtab[hash] = p;
-		while ((length = *(uint8_t *)p) != 0)
-			p += length;
-		p++; // skip over the zero which terminates the list for this hash value
-	}
-
-	if ((tr->dict_min_size > 0) && (size < (unsigned int)tr->dict_min_size))
-		fprintf(stderr, "Full dictionary is not installed for '%s'\n", name);
-
-	return 0;
+        memcpy(tr->data_dictlist, dict_data, size);
+        return LoadDictionaryRest(tr, "(from memory)", (int)size);
 }
 
 /* Generate a hash code from the specified string
