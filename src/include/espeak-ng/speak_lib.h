@@ -558,6 +558,10 @@ ESPEAK_API const char *espeak_TextToPhonemes(const void **textptr, int textmode,
         bits 8-23:  separator character, between phoneme names
 
 */
+#ifdef __cplusplus
+extern "C"
+#endif
+ESPEAK_API const char *espeak_TextToPhonemesTerm(const void **textptr, int textmode, int phonememode, int *terminator);
 
 #ifdef __cplusplus
 extern "C"

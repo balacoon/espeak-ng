@@ -897,9 +897,15 @@ ESPEAK_API const char *espeak_TextToPhonemes(const void **textptr, int textmode,
 
 	TranslateClause(translator, NULL, NULL);
 	*textptr = text_decoder_get_buffer(p_decoder);
-	fprintf(stderr, ">>>>>>terminator: %d\n", translator->clause_terminator);
 
 	return GetTranslatedPhonemeString(phonememode);
+}
+
+ESPEAK_API const char *espeak_TextToPhonemesTerm(const void **textptr, int textmode, int phonememode, int *terminator)
+{
+    const char *res = espeak_TextToPhonemes(textptr, textmode, phonememode);
+    *terminator = translator->clause_terminator;
+    return res;
 }
 
 ESPEAK_NG_API espeak_ng_STATUS espeak_ng_Cancel(void)

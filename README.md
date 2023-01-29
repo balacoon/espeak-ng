@@ -135,3 +135,31 @@ taken from the NetBSD `getopt_long` implementation, which is licensed under a
 [2-clause BSD](COPYING.BSD2) license.
 
 Android is a trademark of Google LLC.
+
+## Creating espeak addon for Balacoon frontend
+
+Fork of eSpeak allows to load language data from memory.
+Here we describe how to build eSpeak data and pack it into addon compatible
+with Balacoon frontend. Additional step - is to introduce mapping of eSpeak
+phonemeset into unified [Balacoon phonemeset](https://balacoon.com/blog/balacoon_phonemeset/).
+
+1. First one need to build the eSpeak in order to create all the language artifacts.
+
+```bash
+autoupdate
+./autogen.sh
+mkdir -p build
+./configure --enable-static=no --without-pcaudiolib \
+    --without-klatt --without-speechplayer --without-mbrola \
+    --without-sonic --prefix=$PWD/build
+make
+make install
+```
+
+2. Optionally compile interactive phonemizer, which shows the API for loading lang data from memory.
+Adjust the phonemizer source to load a new local if you are writing a new espeak2balacoon mapping.
+
+```bash
+g++ interactive_phonemizer.cc -I./build/include -L./build/lib -lespeak-ng -o interactive_phonemizer
+LD_LIBRARY_PATH=$PWD/build/lib ./interactive_phonemizer
+```
