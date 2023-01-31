@@ -1,4 +1,4 @@
-// Copyright Balacoon 2023
+// Copyright 2023 Balacoon
 
 #include <string>
 #include <vector>
@@ -21,7 +21,25 @@ std::vector<char> ReadBinaryFile(const std::string& filepath) {
     return buffer;
 }
 
-int main() {
+std::vector<std::string> getPhonemes(const std::string &line, bool to_print) {
+    const char *cline = line.c_str();
+    std::vector<std::string> res;
+    while (cline != NULL) {
+	int terminator;
+        std::string phonemes {
+            espeak_TextToPhonemesTerm((const void **)&cline, espeakCHARS_AUTO /*textmode*/,
+            1 | (32 << 8) /*phonememode=ASCII, insert space between phonemes*/,
+            &terminator)
+        };
+	res.push_back(phonemes);
+	if (to_print) {
+            std::cout << "Phonemes: [" << phonemes << "], terminated with: " << terminator << std::endl;
+	}
+    }
+    return res;
+}
+
+int main(int argc, char *argv[]) {
     // lang data - structure with data needed for initialization in memory
     espeak_LOADED_DATA lang_data;
     std::vector<char> phontab = ReadBinaryFile("build/share/espeak-ng-data/phontab");
@@ -57,31 +75,30 @@ int main() {
 
     // init
     int result = espeak_InitializeMem(AUDIO_OUTPUT_SYNCHRONOUS, 0 /*buflen*/, &lang_data, 0/*options*/);
-    std::cout << "Initialized: " << result << std::endl;
 
     // set voice, change voice code if needed
     result = espeak_SetVoiceByBinaryData("gmw/en-US", &lang_data);
-    std::cout << "Set voice: " << result << std::endl;
     free(lang_data.lang_conf_lines);
 
-    while (true) {
+    if (argc == 2) {
+        std::ifstream in_txt(argv[1]);
+	while(std::getline(in_txt, line)) {
+	    for (auto res : getPhonemes(line, false)) {
+		// print without any extra info
+	        std::cout << res << std::endl;
+	    }
+	}
+    } else if (argc == 1) {
+        while (true) {
 	    std::cout << "Write line to phonemize: ";
-	    std::string line;
 	    std::getline(std::cin, line);
 	    if (!std::cin) {
                 break;
 	    }
-
-	    const char *cline = line.c_str();
-	    while (cline != NULL) {
- 	        int terminator;
-                std::string phonemes {
-                    espeak_TextToPhonemesTerm((const void **)&cline, espeakCHARS_AUTO /*textmode*/,
-                            1 | (32 << 8) /*phonememode=ASCII, insert space between phonemes*/,
-                            &terminator)
-                };
-                std::cout << "Phonemes: [" << phonemes << "], terminated with: " << terminator << std::endl;
-	    }
+            (void)getPhonemes(line, true);
+        }
+    } else {
+    	std::cout << "Run without arguments or provide text file: " << std::endl;
     }
 
     // remove allocated mem

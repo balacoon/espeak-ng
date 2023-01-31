@@ -163,3 +163,17 @@ Adjust the phonemizer source to load a new local if you are writing a new espeak
 g++ interactive_phonemizer.cc -I./build/include -L./build/lib -lespeak-ng -o interactive_phonemizer
 LD_LIBRARY_PATH=$PWD/build/lib ./interactive_phonemizer
 ```
+
+3. Pack espeak addon compatible with balacoon frontend:
+
+```bash
+python3 pack.py --out espeak_frontend.addon
+```
+
+It packs locales from `packing_info`. If your locale is not in the dir, you should create it, following
+`en_us` template. It should contain info about locale code, data files location and most importantly,
+mapping between espeak and balacoon phonemes. In order to create one, extract phonemes from large text file
+using `interactive_phonemizer file.txt`, then pick corresponding phonemes from
+https://github.com/balacoon/learn_to_pronounce/blob/main/data/phonemeset.txt.
+It can be helpful to check `dictsource/{lang}_list` and `phsource/ph_{language}`.
+
