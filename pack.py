@@ -34,9 +34,9 @@ def main():
     # iterate over packing information directory. it should have following stricture
     # packing_info
     #   - en_us
-    #       - code (contains eSpeak language code, for ex. "gmw/en-US")
+    #       - lang_code (contains eSpeak language code, for ex. "gmw/en-US")
     #       - lang_config (contains path to lang config, relative to install dir, for ex. "share/espeak-ng-data/lang/gmw/en-US")
-    #       - dict (contains path to dictionary, relative to install dir, for ex. "share/espeak-ng-data/en_dict")
+    #       - dictionary (contains path to dictionary, relative to install dir, for ex. "share/espeak-ng-data/en_dict")
     #       - phoneme_mapping (contains mapping between eSpeak phonemes and unified Balacoon phonemeset)
     #       - stress_mapping (contains mapping of stress marks)
     for locale in os.listdir(args.packing_info):
@@ -44,10 +44,10 @@ def main():
         logging.info("Packing [{}]".format(locale))
 
         # read eSpeak language code
-        with open(os.path.join(locale_dir, "code"), "r") as fp:
+        with open(os.path.join(locale_dir, "lang_code"), "r") as fp:
             espeak_locale = fp.readline().strip()
             logging.info("[{}] corresponds to [{}] in espeak".format(locale, espeak_locale))
-            addon_dict["{}_code".format(locale)] = espeak_locale
+            addon_dict["{}_lang_code".format(locale)] = espeak_locale
 
         # read language config
         with open(os.path.join(locale_dir, "lang_config"), "r") as fp:
@@ -56,14 +56,14 @@ def main():
             with open(path, "r") as lang_fp:
                 lines = lang_fp.readlines()
                 lines = [x.strip() for x in lines]
-                addon_dict["{}_lang".format(locale)] = lines
+                addon_dict["{}_lang_config".format(locale)] = lines
 
         # read dictionary
-        with open(os.path.join(locale_dir, "dict"), "r") as fp:
+        with open(os.path.join(locale_dir, "dictionary"), "r") as fp:
             suffix = fp.readline().strip()
             path = os.path.join(args.install_dir, suffix)
             with open(path, "rb") as dict_fp:
-                addon_dict["{}_dict".format(locale)] = dict_fp.read()
+                addon_dict["{}_dictionary".format(locale)] = dict_fp.read()
 
         # read phoneme mapping
         with open(os.path.join(locale_dir, "phoneme_mapping"), "r") as fp:
