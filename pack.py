@@ -78,7 +78,7 @@ def main():
                 else:
                     assert len(parts) == 2
                     mapping[parts[0]] = parts[1].split()
-            addon_dict["{}_phoneme_mapping"] = mapping
+            addon_dict["{}_phoneme_mapping".format(locale)] = mapping
 
         # read stress mapping
         with open(os.path.join(locale_dir, "stress_mapping"), "r") as fp:
@@ -88,7 +88,7 @@ def main():
                 # <espeak stress>\t<balacoon stress>
                 in_stress, out_stress = line.strip().split("\t")
                 mapping.append((in_stress, out_stress))
-            addon_dict["{}_stress_mapping"] = mapping
+            addon_dict["{}_stress_mapping".format(locale)] = mapping
 
     # save created addon
     with open(args.out, "wb") as fp:
