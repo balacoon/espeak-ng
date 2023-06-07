@@ -397,7 +397,7 @@ void ReadNumbers(char *p, int *flags, int maxValue,  const MNEM_TAB *keyword_tab
 	}
 }
 
-static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int control, const char **lines, int lines_num, const char *dict_data, int dict_size)
+voice_t *LoadVoiceMem(const char *vname, int control, const char **lines, int lines_num, const char *dict_data, int dict_size)
 {
 	// control, bit 0  1= no_default
 	//          bit 1  1 = change tone only, not language
@@ -407,19 +407,21 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
         //                     load the phoneme table
         //          bit 16 1 = UNDOCUMENTED
 
+	FILE *f_voice = NULL;
 	char *p;
 	int key;
 	int ix;
-	int line_idx;
+	int line_ix = 0;
 	int value;
 	int langix = 0;
 	int tone_only = control & 2;
 	bool language_set = false;
 	bool phonemes_set = false;
 
-	char new_dictionary[40];
+	char voicename[40];
 	char language_name[40];
 	char translator_name[40];
+	char new_dictionary[40];
 	char phonemes_name[40] = "";
 	const char *language_type;
 	char buf[sizeof(path_home)+30];
@@ -441,12 +443,34 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
 		MAKE_MEM_UNDEFINED(&voice_languages, sizeof(voice_languages));
 	}
 
+	strncpy0(voicename, vname, sizeof(voicename));
+	if (lines == NULL) {
+		if (control & 0x10) {
+			strcpy(buf, vname);
+			if (GetFileLength(buf) <= 0)
+				return NULL;
+		} else {
+			if (voicename[0] == 0 && !(control & 8)/*compiling phonemes*/)
+				strcpy(voicename, ESPEAKNG_DEFAULT_VOICE);
+
+			char path_voices[sizeof(path_home)+12];
+			sprintf(path_voices, "%s%cvoices%c", path_home, PATHSEP, PATHSEP);
+			sprintf(buf, "%s%s", path_voices, voicename); // look in the main voices directory
+
+			if (GetFileLength(buf) <= 0) {
+				sprintf(path_voices, "%s%clang%c", path_home, PATHSEP, PATHSEP);
+				sprintf(buf, "%s%s", path_voices, voicename); // look in the main languages directory
+			}
+		}
+		f_voice = fopen(buf, "r");
+	}
+
         if (!(control & 8)/*compiling phonemes*/)
             language_type = ESPEAKNG_DEFAULT_VOICE; // default
         else
             language_type = "";
 
-	if (lines_num == 0) {
+	if (f_voice == NULL && lines == NULL) {
 		if (control & 3)
 			return NULL; // can't open file
 
@@ -480,9 +504,19 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
 	}
 	VoiceReset(tone_only);
 
-        for (line_idx = 0; lines != NULL && line_idx < lines_num; line_idx++) {
-		strcpy(buf, lines[line_idx]);
-	
+	while (true) {
+		if (f_voice != NULL) {
+		    if (fgets_strip(buf, sizeof(buf), f_voice) == NULL) {
+		        break;
+		    }
+		} else if (lines != NULL) {
+		    if (line_ix >= lines_num) {
+                        break;
+		    }
+		    strcpy(buf, lines[line_ix]);
+		} else {
+                    break;
+		}	
 		// isolate the attribute name
 		for (p = buf; (*p != 0) && !isspace(*p); p++) ;
 		*p++ = 0;
@@ -643,6 +677,9 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
                 espeak_ng_STATUS status = LoadMbrolaTable(name1, name2, &srate);
                 if (status != ENS_OK) {
                     espeak_ng_PrintStatusCodeMessage(status, stderr, NULL);
+		    if (f_voice != NULL) {
+                        fclose(f_voice);
+		    }
                     return NULL;
                 }
                 else
@@ -671,6 +708,8 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
             }
         }
 	}
+	if (f_voice != NULL)
+		fclose(f_voice);
 
 	if ((translator == NULL) && (!tone_only)) {
 		// not set by language attribute
@@ -694,17 +733,17 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
 		voice->phoneme_tab_ix = ix;
 		translator->phoneme_tab_ix = ix;
 
-                if (!(control & 8/*compiling phonemes*/)) {
+		if (!(control & 8/*compiling phonemes*/)) {
 			if (dict_data != NULL) {
-				LoadDictionaryMem(translator, dict_data, dict_size);				
+				LoadDictionaryMem(translator, dict_data, dict_size);
 			} else {
-    				LoadDictionary(translator, new_dictionary, control & 4);
+				LoadDictionary(translator, new_dictionary, control & 4);
 			}
-                        if (dictionary_name[0] == 0) {
-                                DeleteTranslator(translator);
-                                return NULL; // no dictionary loaded
-                        }
-                }
+			if (dictionary_name[0] == 0) {
+				DeleteTranslator(translator);
+				return NULL; // no dictionary loaded
+			}
+		}
 
 		/* Terminate languages list with a zero-priority entry */
 		voice_languages[langix] = 0;
@@ -715,70 +754,8 @@ static voice_t *LoadVoiceInternal(const char *vname, const char *voicename, int 
 
 voice_t *LoadVoice(const char *vname, int control)
 {
-	int i;
-        FILE* f_voice;
-	char **lines = NULL;
-	int lines_num = 0;
-	char buf[sizeof(path_home) + 30];
-	char voicename[40];
-
-	strncpy0(voicename, vname, sizeof(voicename));
-	if (control & 0x10) {
-		strcpy(buf, vname);
-		if (GetFileLength(buf) <= 0)
-			return NULL;
-	} else {
-		if (voicename[0] == 0 && !(control & 8)/*compiling phonemes*/)
-			strcpy(voicename, ESPEAKNG_DEFAULT_VOICE);
-
-		char path_voices[sizeof(path_home)+12];
-		sprintf(path_voices, "%s%cvoices%c", path_home, PATHSEP, PATHSEP);
-		sprintf(buf, "%s%s", path_voices, voicename); // look in the main voices directory
-
-		if (GetFileLength(buf) <= 0) {
-			sprintf(path_voices, "%s%clang%c", path_home, PATHSEP, PATHSEP);
-			sprintf(buf, "%s%s", path_voices, voicename); // look in the main languages directory
-		}
-	}
-
-	f_voice = fopen(buf, "r");
-        if (f_voice != NULL) {
-	    // count number of lines
-	    char c;
-	    for (c = getc(f_voice); c != EOF; c = getc(f_voice)) {
-	    	if (c == '\n') {
-			lines_num++;
-		}
-	    }
-	    rewind(f_voice);
-	    // allocate lines array
-	    lines = (char **)malloc(lines_num * sizeof(char *));
-	    // read lines to array
-	    i = 0;
-	    while (fgets_strip(buf, sizeof(buf), f_voice) != NULL) {
-	    	lines[i] = (char *)malloc(strlen(buf) + 1);
-		strcpy(lines[i], buf);
-		i++;
-	    }
-	    fclose(f_voice);
-	}
-	voice_t *res = LoadVoiceInternal(vname, (const char *)voicename, control, (const char **)lines, lines_num, NULL, 0);
-	if (lines_num > 0) {
-	   	// free the lines array
-		for (i = 0; i < lines_num; i++) {
-	    		free(lines[i]);
-		}
-		free(lines);
-	}
-	return res;
+	return LoadVoiceMem(vname, control, NULL, 0, NULL, 0);
 }
-
-
-voice_t *LoadVoiceMem(const char *vname, int control, const char** lines, int lines_num, const char* dict_data, int dict_size)
-{
-	return LoadVoiceInternal(vname, vname, control, lines, lines_num, dict_data, dict_size);
-}
-
 
 static char *ExtractVoiceVariantName(char *vname, int variant_num, int add_dir)
 {
@@ -1310,35 +1287,6 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByFile(const char *filename)
 	if (LoadVoice(buf, 0x10) != NULL) {
 		if (variant_name[0] != 0)
 			LoadVoice(variant_name, 2);
-
-		DoVoiceChange(voice);
-		voice_selector.languages = voice->language_name;
-		SetVoiceStack(&voice_selector, variant_name);
-		return ENS_OK;
-	}
-
-	return ENS_VOICE_NOT_FOUND;
-}
-
-ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByBinaryData(const char* filename, const espeak_LOADED_DATA *data)
-{
-	int ix;
-	espeak_VOICE voice_selector;
-	char *variant_name;
-	char buf[60];
-
-	strncpy0(buf, filename, sizeof(buf));
-
-	variant_name = ExtractVoiceVariantName(buf, 0, 1);
-
-	memset(&voice_selector, 0, sizeof(voice_selector));
-	voice_selector.name = (char *)filename; // include variant name in voice stack ??
-
-	// first check for a voice with this filename
-	// This may avoid the need to call espeak_ListVoices().
-	if (LoadVoiceMem(buf, 0, data->lang_conf_lines, data->lang_conf_lines_num, data->dict, (int)data->dict_size) != NULL) {
-		if (variant_name[0] != 0)
-			LoadVoiceMem(variant_name, 2, data->lang_conf_lines, data->lang_conf_lines_num, data->dict, (int)data->dict_size);
 
 		DoVoiceChange(voice);
 		voice_selector.languages = voice->language_name;
