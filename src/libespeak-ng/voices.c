@@ -1297,6 +1297,36 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByFile(const char *filename)
 	return ENS_VOICE_NOT_FOUND;
 }
 
+
+ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByBinaryData(const char* filename, const espeak_LOADED_DATA *data)
+{
+	int ix;
+	espeak_VOICE voice_selector;
+	char *variant_name;
+	char buf[60];
+
+	strncpy0(buf, filename, sizeof(buf));
+
+	variant_name = ExtractVoiceVariantName(buf, 0, 1);
+
+	memset(&voice_selector, 0, sizeof(voice_selector));
+	voice_selector.name = (char *)filename; // include variant name in voice stack ??
+
+	// first check for a voice with this filename
+	// This may avoid the need to call espeak_ListVoices().
+	if (LoadVoiceMem(buf, 0, data->lang_conf_lines, data->lang_conf_lines_num, data->dict, (int)data->dict_size) != NULL) {
+		if (variant_name[0] != 0)
+			LoadVoiceMem(variant_name, 2, data->lang_conf_lines, data->lang_conf_lines_num, data->dict, (int)data->dict_size);
+
+		DoVoiceChange(voice);
+		voice_selector.languages = voice->language_name;
+		SetVoiceStack(&voice_selector, variant_name);
+		return ENS_OK;
+	}
+
+	return ENS_VOICE_NOT_FOUND;
+}
+
 ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByName(const char *name)
 {
 	espeak_VOICE *v;
