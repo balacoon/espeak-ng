@@ -513,7 +513,7 @@ voice_t *LoadVoiceMem(const char *vname, int control, const char **lines, int li
 		    if (line_ix >= lines_num) {
                         break;
 		    }
-		    strcpy(buf, lines[line_ix]);
+		    strcpy(buf, lines[line_ix++]);
 		} else {
                     break;
 		}	
