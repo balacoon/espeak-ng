@@ -311,6 +311,11 @@ int SetTranslator3(const char *new_language)
 	return SetAlternateTranslator(new_language, &translator3, translator3_language, NULL, 0);
 }
 
+int SetTranslator3Mem(const char *new_language, const char *dict_data, size_t dict_size)
+{
+        return SetAlternateTranslator(new_language, &translator3, translator3_language, dict_data, dict_size);
+}
+
 static int TranslateWord2(Translator *tr, char *word, WORD_TAB *wtab, int pre_pause)
 {
 	int flags = 0;

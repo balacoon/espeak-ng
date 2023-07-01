@@ -663,6 +663,7 @@ Translator *SelectTranslator(const char *name);
 int SetTranslator2(const char *name);
 int SetTranslator2Mem(const char *name, const char *dict_data, size_t dict_size);
 int SetTranslator3(const char *name);
+int SetTranslator3Mem(const char *name, const char *dict_data, size_t dict_size);
 void DeleteTranslator(Translator *tr);
 void ProcessLanguageOptions(LANGUAGE_OPTIONS *langopts);
 
