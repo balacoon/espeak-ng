@@ -260,10 +260,11 @@ static void Word_EmbeddedCmd(void)
 	} while (((embedded_cmd & 0x80) == 0) && (embedded_read < embedded_ix));
 }
 
-static int SetAlternateTranslator(const char *new_language, Translator **translator, char translator_language[20])
+static int SetAlternateTranslator(const char *new_language, Translator **translator, char translator_language[20], const char *dict_data, size_t dict_size)
 {
 	// Set alternate translator to a second language
 	int new_phoneme_tab;
+	int dict_res;
 
 	if ((new_phoneme_tab = SelectPhonemeTableName(new_language)) >= 0) {
 		if ((*translator != NULL) && (strcmp(new_language, translator_language) != 0)) {
@@ -276,7 +277,13 @@ static int SetAlternateTranslator(const char *new_language, Translator **transla
 			*translator = SelectTranslator(new_language);
 			strcpy(translator_language, new_language);
 
-			if (LoadDictionary(*translator, (*translator)->dictionary_name, 0) != 0) {
+			if (dict_data != NULL) {
+			    dict_res = LoadDictionaryMem(*translator, dict_data, dict_size);
+			} else {
+			    dict_res = LoadDictionary(*translator, (*translator)->dictionary_name, 0);
+			}
+
+			if (dict_res != 0) {
 				SelectPhonemeTable(voice->phoneme_tab_ix); // revert to original phoneme table
 				new_phoneme_tab = -1;
 				translator_language[0] = 0;
@@ -291,12 +298,17 @@ static int SetAlternateTranslator(const char *new_language, Translator **transla
 
 int SetTranslator2(const char *new_language)
 {
-	return SetAlternateTranslator(new_language, &translator2, translator2_language);
+	return SetAlternateTranslator(new_language, &translator2, translator2_language, NULL, 0);
+}
+
+int SetTranslator2Mem(const char *new_language, const char *dict_data, size_t dict_size)
+{
+        return SetAlternateTranslator(new_language, &translator2, translator2_language, dict_data, dict_size);
 }
 
 int SetTranslator3(const char *new_language)
 {
-	return SetAlternateTranslator(new_language, &translator3, translator3_language);
+	return SetAlternateTranslator(new_language, &translator3, translator3_language, NULL, 0);
 }
 
 static int TranslateWord2(Translator *tr, char *word, WORD_TAB *wtab, int pre_pause)
