@@ -26,7 +26,7 @@ AM_CXXFLAGS += -fprofile-instr-generate -fcoverage-mapping
 endif
 
 EXTRA_DIST=
-CLEANFILES = dictsource/ru_listx dictsource/cmn_listx dictsource/yue_listx
+CLEANFILES = dictsource/ru_listx dictsource/uk_listx dictsource/cmn_listx dictsource/yue_listx
 
 bin_PROGRAMS =
 lib_LTLIBRARIES =
@@ -909,7 +909,9 @@ ug: espeak-ng-data/ug_dict
 espeak-ng-data/ug_dict: dictsource/ug_list dictsource/ug_rules dictsource/ug_extra
 
 uk: espeak-ng-data/uk_dict
-espeak-ng-data/uk_dict: dictsource/uk_list dictsource/uk_rules dictsource/uk_extra
+dictsource/uk_listx:
+	ln -svf extra/uk_listx dictsource/
+espeak-ng-data/uk_dict: dictsource/uk_list dictsource/uk_rules dictsource/uk_extra dictsource/uk_listx
 
 ur: espeak-ng-data/ur_dict
 espeak-ng-data/ur_dict: dictsource/ur_list dictsource/ur_rules dictsource/ur_extra dictsource/ur_emoji
