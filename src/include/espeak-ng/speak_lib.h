@@ -110,6 +110,8 @@ typedef struct {
     int lang_conf_lines_num;
     const char *dict;
     size_t dict_size;
+    const char *secondary_dict;
+    size_t secondary_dict_size;
 } espeak_LOADED_DATA;
 
 typedef struct {
