@@ -1321,6 +1321,11 @@ ESPEAK_NG_API espeak_ng_STATUS espeak_ng_SetVoiceByBinaryData(const char* filena
 		DoVoiceChange(voice);
 		voice_selector.languages = voice->language_name;
 		SetVoiceStack(&voice_selector, variant_name);
+
+                if (data->secondary_dict != NULL) {
+		    SetTranslator2Mem(ESPEAKNG_DEFAULT_VOICE, data->secondary_dict, data->secondary_dict_size);
+		}	
+
 		return ENS_OK;
 	}
 
