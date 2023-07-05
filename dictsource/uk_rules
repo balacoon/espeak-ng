@@ -4,6 +4,7 @@
 
 .group а
        а     a
+       а́     'a
 
 .group б
        б     b
@@ -23,9 +24,11 @@
 
 .group е
        е     E
+       е́     'E
 
 .group є
        є     jE
+       є́     j'E
 
 .group ж
        ж     Z
@@ -35,12 +38,15 @@
 
 .group и
        и     I
+       и́     'I
 
 .group і
        і     i:
+       і́     'i:
 
 .group ї
        ї     ji:
+       ї́     j'i:
 
 .group й
        й     j
@@ -69,6 +75,7 @@
 
 .group о
        о     o
+       о́     'o
 
 .group п
        п     p
@@ -85,6 +92,7 @@
 
 .group у
        у     u
+       у́     'u
 
 .group ф
        ф     f
@@ -110,9 +118,11 @@
 
 .group ю
        ю     ju
+       ю́     j'u
 
 .group я
        я     ja
+       я́     j'a
 
 .group ʼ
        ʼ     |
