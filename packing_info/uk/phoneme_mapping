@@ -11,7 +11,6 @@ _|
 3	E
 3:	E
 a	a
-a	E
 a#	a
 A:	a
 A@	a r
@@ -27,27 +26,23 @@ C	k
 d	d
 d[	t
 D	z
-dZ	d z
-dZ	tS
+dZ	d Z
 e@	E r
 E	E
 eI	E i
 f	f
 g	g
 h	h\
-h	x
 i	i
 i:	i
 i@	i a
 I	I
 I#	I
 I2	E
-I2	I
 i@3	I
 j	j
 k	k
 l	l
-l#	l
 l#	S
 l^	l'
 @L	a l
@@ -77,7 +72,6 @@ t#	t
 t[	t
 T	s
 t2	t
-tS	t S
 tS	tS
 u	u
 u:	u
