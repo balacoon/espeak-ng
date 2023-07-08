@@ -1,6 +1,7 @@
 name English (Great Britain)
 language en-gb  2
 language en 2
+lowercaseSentence
 
 maintainer Reece H. Dunn <msclrhd@gmail.com>
 status mature

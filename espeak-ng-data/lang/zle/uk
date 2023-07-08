@@ -1,5 +1,6 @@
 name Ukrainian
 language uk
+lowercaseSentence
 
 maintainer Andrij Mizyk <andm1zyk@proton.me>
 status testing
